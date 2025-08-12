@@ -1,10 +1,21 @@
 from django.contrib import admin
-from .models import Book
-from .models import Book
+from django.contrib.auth.admin import UserAdmin
+from .models import CustomUser
 
+class CustomUserAdmin(UserAdmin):
+    model = CustomUser
 
-@admin.register(Book)
-class BookAdmin(admin.ModelAdmin):
-    list_display = ('title', 'author', 'publication_year')  # Columns in list view
-    list_filter = ('publication_year', 'author')            # Filter sidebar
-    search_fields = ('title', 'author')                     # Search box
+    # Add the custom fields to fieldsets in admin detail view
+    fieldsets = UserAdmin.fieldsets + (
+        ('Additional Info', {'fields': ('date_of_birth', 'profile_photo')}),
+    )
+
+    # Include the custom fields in the list display on the user list page
+    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'date_of_birth')
+
+    # Add the custom fields to the add user form
+    add_fieldsets = UserAdmin.add_fieldsets + (
+        ('Additional Info', {'fields': ('date_of_birth', 'profile_photo')}),
+    )
+
+admin.site.register(CustomUser, CustomUserAdmin)
