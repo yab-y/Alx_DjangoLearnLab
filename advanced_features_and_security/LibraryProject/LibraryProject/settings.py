@@ -97,3 +97,4 @@ SECURE_BROWSER_XSS_FILTER = True
 # Documentation: Adds header to enable the browser’s cross-site scripting filter.
 
 # Other standard settings omitted for brevity...
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
