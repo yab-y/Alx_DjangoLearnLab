@@ -14,3 +14,12 @@ class BookSerializer(serializers.ModelSerializer):
         if value > current_year:
             raise serializers.ValidationError("Publication year cannot be in the future.")
         return value
+
+# Serializer for the Author model
+# Includes a nested BookSerializer to serialize all related books
+class AuthorSerializer(serializers.ModelSerializer):
+    books = BookSerializer(many=True, read_only=True)  # nested serializer for one-to-many relationship
+
+    class Meta:
+        model = Author
+        fields = ['name', 'books']
