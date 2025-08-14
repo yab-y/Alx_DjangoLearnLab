@@ -1,0 +1,14 @@
+<!-- File: django_blog/blog/templates/blog/search_results.html -->
+{% extends "base.html" %}
+{% block content %}
+<h1>Search Results</h1>
+{% if posts %}
+    {% for post in posts %}
+        <h2><a href="{{ post.get_absolute_url }}">{{ post.title }}</a></h2>
+        <p>{{ post.content|truncatewords:20 }}</p>
+    {% endfor %}
+{% else %}
+    <p>No posts match your search query.</p>
+{% endif %}
+<a href="{% url 'post-list' %}">Back to all posts</a>
+{% endblock %}

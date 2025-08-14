@@ -1,36 +1,32 @@
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.views.generic import CreateView, UpdateView, DeleteView
-from .models import Post, Comment
-from .forms import PostForm, CommentForm
+# File: django_blog/blog/views.py
+from django.views.generic import ListView
+from django.db.models import Q
+from .models import Post
 
-class CommentCreateView(LoginRequiredMixin, CreateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = 'blog/comment_form.html'
+class PostListView(ListView):
+    model = Post
+    template_name = 'blog/post_list.html'
+    context_object_name = 'posts'
+    ordering = ['-published_date']
 
-    def form_valid(self, form):
-        post_id = self.kwargs.get('post_id')
-        form.instance.author = self.request.user
-        form.instance.post = get_object_or_404(Post, id=post_id)
-        return super().form_valid(form)
+class TagPostListView(ListView):
+    model = Post
+    template_name = 'blog/post_list.html'
+    context_object_name = 'posts'
 
-class CommentUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
-    model = Comment
-    form_class = CommentForm
-    template_name = 'blog/comment_form.html'
+    def get_queryset(self):
+        tag_name = self.kwargs.get('tag_name')
+        return Post.objects.filter(tags__name__iexact=tag_name)
 
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
+class SearchResultsView(ListView):
+    model = Post
+    template_name = 'blog/search_results.html'
+    context_object_name = 'posts'
 
-class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
-    model = Comment
-    template_name = 'blog/comment_confirm_delete.html'
-
-    def get_success_url(self):
-        return self.object.post.get_absolute_url()
-
-    def test_func(self):
-        comment = self.get_object()
-        return self.request.user == comment.author
+    def get_queryset(self):
+        query = self.request.GET.get('q')
+        return Post.objects.filter(
+            Q(title__icontains=query) |
+            Q(content__icontains=query) |
+            Q(tags__name__icontains=query)
+        ).distinct()
