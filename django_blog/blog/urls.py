@@ -9,7 +9,7 @@ from .views import (
     CommentUpdateView,
     CommentDeleteView,
     search_posts,
-    PostByTagListView,  # import the tag view
+    PostByTagListView,
 )
 
 urlpatterns = [
@@ -28,6 +28,6 @@ urlpatterns = [
     # Search
     path('search/', search_posts, name='search-posts'),
 
-    # Tag filtering (this is what the check looks for)
+    # Tag filtering
     path('tags/<slug:tag_slug>/', PostByTagListView.as_view(), name='posts-by-tag'),
 ]
