@@ -1,15 +1,14 @@
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.views.generic import View
+from django.db.models import Q
 from .models import Post, Comment
 from .forms import CommentForm
 
-
-
 # Add comment to a post
 class CommentCreateView(LoginRequiredMixin, View):
-    def post(self, request, post_pk):
-        post = get_object_or_404(Post, pk=post_pk)
+    def post(self, request, pk):  # changed post_pk → pk
+        post = get_object_or_404(Post, pk=pk)
         form = CommentForm(request.POST)
         if form.is_valid():
             comment = form.save(commit=False)
@@ -48,3 +47,15 @@ class CommentDeleteView(LoginRequiredMixin, UserPassesTestMixin, View):
     def test_func(self):
         comment = get_object_or_404(Comment, pk=self.kwargs['pk'])
         return self.request.user == comment.author
+
+# Search posts
+def search_posts(request):
+    query = request.GET.get('q')
+    results = []
+    if query:
+        results = Post.objects.filter(
+            Q(title__icontains=query) | 
+            Q(content__icontains=query) | 
+            Q(tags__name__icontains=query)
+        ).distinct()
+    return render(request, 'blog/search_results.html', {'results': results, 'query': query})
