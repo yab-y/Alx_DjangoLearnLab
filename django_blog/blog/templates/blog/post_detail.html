@@ -1,13 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h1>{{ object.title }}</h1>
+<p>{{ object.content }}</p>
+<p>Author: {{ object.author.username }}</p>
+
+{% if user.is_authenticated and user == object.author %}
+    <a href="{% url 'post-update' object.pk %}">Edit</a> |
+    <a href="{% url 'post-delete' object.pk %}">Delete</a>
+{% endif %}
+
+<a href="{% url 'post-list' %}">Back to list</a>
+
+<hr>
 <h3>Comments</h3>
 {% for comment in object.comments.all %}
-    <p>{{ comment.author.username }} said: {{ comment.content }}</p>
-    {% if user.is_authenticated and user == comment.author %}
-        <a href="{% url 'comment-update' comment.pk %}">Edit</a>
-        <form action="{% url 'comment-delete' comment.pk %}" method="post" style="display:inline;">
-            {% csrf_token %}
-            <button type="submit">Delete</button>
-        </form>
-    {% endif %}
+    <div style="margin-bottom: 1em;">
+        <strong>{{ comment.author.username }}:</strong> {{ comment.content }} <br>
+        <small>Posted on {{ comment.created_at|date:"M d, Y H:i" }}</small>
+        {% if user.is_authenticated and user == comment.author %}
+            <div>
+                <a href="{% url 'comment-update' comment.pk %}">Edit</a>
+                <form action="{% url 'comment-delete' comment.pk %}" method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit">Delete</button>
+                </form>
+            </div>
+        {% endif %}
+    </div>
 {% empty %}
     <p>No comments yet.</p>
 {% endfor %}
@@ -22,7 +42,5 @@
 {% else %}
     <p><a href="{% url 'login' %}">Login</a> to comment.</p>
 {% endif %}
-def get_context_data(self, **kwargs):
-    context = super().get_context_data(**kwargs)
-    context['comment_form'] = CommentForm()
-    return context
+
+{% endblock %}
