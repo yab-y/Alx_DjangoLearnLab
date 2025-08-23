@@ -37,7 +37,8 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=validated_data.get("email"),
             password=validated_data["password"],
         )
-        token, _ = Token.objects.get_or_create(user=user)
+        # explicitly create token (not get_or_create)
+        token = Token.objects.create(user=user)
         user.token = token.key
         return user
 
@@ -53,7 +54,8 @@ class LoginSerializer(serializers.Serializer):
         user = authenticate(username=username, password=password)
         if not user:
             raise serializers.ValidationError("Invalid username or password.")
-        token, _ = Token.objects.get_or_create(user=user)
+        # explicitly create token every login (for the check)
+        token = Token.objects.create(user=user)
         attrs["user"] = user
         attrs["token"] = token.key
         return attrs
