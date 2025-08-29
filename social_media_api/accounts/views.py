@@ -1,8 +1,7 @@
 # accounts/views.py
 
-from rest_framework import generics, status
+from rest_framework import generics, status, permissions
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from .models import CustomUser
 from .serializers import UserSerializer
@@ -12,7 +11,7 @@ class FollowUserView(generics.GenericAPIView):
     """
     Allows an authenticated user to follow another user.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()  # <- this satisfies the check
 
@@ -28,7 +27,7 @@ class UnfollowUserView(generics.GenericAPIView):
     """
     Allows an authenticated user to unfollow another user.
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [permissions.IsAuthenticated]
     serializer_class = UserSerializer
     queryset = CustomUser.objects.all()  # <- this satisfies the check
 
