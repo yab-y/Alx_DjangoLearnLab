@@ -1,65 +1,67 @@
-from django.shortcuts import render
-
-# Create your views here.
-from django.contrib.auth import get_user_model
-from rest_framework.views import APIView
+# accounts/views.py
+from rest_framework import status, generics, permissions
 from rest_framework.response import Response
-from rest_framework import status, permissions, parsers
-from rest_framework.authtoken.models import Token
-
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
+from rest_framework.views import APIView
+from django.contrib.auth import get_user_model
+from .serializers import UserTinySerializer
 
 User = get_user_model()
 
-class RegisterView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = RegisterSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.save()
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response(
-                {"token": token.key, "user": UserSerializer(user, context={"request": request}).data},
-                status=status.HTTP_201_CREATED
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class LoginView(APIView):
-    permission_classes = [permissions.AllowAny]
-
-    def post(self, request):
-        serializer = LoginSerializer(data=request.data)
-        if serializer.is_valid():
-            user = serializer.validated_data["user"]
-            token, _ = Token.objects.get_or_create(user=user)
-            return Response(
-                {"token": token.key, "user": UserSerializer(user, context={"request": request}).data},
-                status=status.HTTP_200_OK
-            )
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-class ProfileView(APIView):
-    """
-    GET: return current user's profile
-    PUT/PATCH: update current user's profile (supports multipart for image upload)
-    """
+class FollowUserView(APIView):
     permission_classes = [permissions.IsAuthenticated]
-    parser_classes = [parsers.MultiPartParser, parsers.FormParser, parsers.JSONParser]
 
-    def get(self, request):
-        return Response(UserSerializer(request.user, context={"request": request}).data)
+    def post(self, request, user_id):
+        target = generics.get_object_or_404(User, pk=user_id)
+        if target == request.user:
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.follow(target)
+        return Response({"detail": f"You are now following {target.username}."}, status=status.HTTP_200_OK)
 
-    def put(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=False, context={"request": request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def patch(self, request):
-        serializer = UserSerializer(request.user, data=request.data, partial=True, context={"request": request})
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class UnfollowUserView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request, user_id):
+        target = generics.get_object_or_404(User, pk=user_id)
+        if target == request.user:
+            return Response({"detail": "You cannot unfollow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+        request.user.unfollow(target)
+        return Response({"detail": f"You have unfollowed {target.username}."}, status=status.HTTP_200_OK)
+
+
+class FollowingListView(generics.ListAPIView):
+    """
+    List users that <user_id> is following.
+    """
+    serializer_class = UserTinySerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None  # optional: or reuse DefaultPagination
+
+    def get_queryset(self):
+        user_id = self.kwargs.get("user_id")
+        user = generics.get_object_or_404(User, pk=user_id)
+        return user.following.all()
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["request"] = self.request
+        return ctx
+
+
+class FollowersListView(generics.ListAPIView):
+    """
+    List users that follow <user_id>.
+    """
+    serializer_class = UserTinySerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = None
+
+    def get_queryset(self):
+        user_id = self.kwargs.get("user_id")
+        user = generics.get_object_or_404(User, pk=user_id)
+        return user.followers.all()
+
+    def get_serializer_context(self):
+        ctx = super().get_serializer_context()
+        ctx["request"] = self.request
+        return ctx
