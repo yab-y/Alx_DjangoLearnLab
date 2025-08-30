@@ -15,10 +15,18 @@ class PostLikeToggle(APIView):
         user = request.user
         like, created = Like.objects.get_or_create(user=user, post=post)
         if created:
-            # signal handles notification creation
+            # create notification here explicitly
+            if post.user != user:  # avoid self-notifications
+                Notification.objects.create(
+                    recipient=post.user,
+                    actor=user,
+                    verb="liked your post",
+                    target=post
+                )
             return Response({'detail': 'post liked', 'liked': True}, status=status.HTTP_201_CREATED)
         else:
             return Response({'detail': 'already liked', 'liked': True}, status=status.HTTP_200_OK)
+#
 
 class PostUnlike(APIView):
     permission_classes = [permissions.IsAuthenticated]
