@@ -2,9 +2,10 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     # Users this user follows
     # symmetrical=False because follow is directional (A follows B != B follows A)
+    bio = models.TextField(blank=True, null=True)
     following = models.ManyToManyField(
         "self",
         symmetrical=False,

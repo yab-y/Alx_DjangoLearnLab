@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import Post, Comment
+from .models import Post, Like
 
 User = get_user_model()
 
@@ -46,3 +47,21 @@ class PostSerializer(serializers.ModelSerializer):
         if request and request.user and request.user.is_authenticated:
             validated_data["author"] = request.user
         return super().create(validated_data)
+class LikeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Like
+        fields = ['id', 'user', 'post', 'timestamp']
+
+class PostSerializer(serializers.ModelSerializer):
+    likes_count = serializers.IntegerField(source='likes.count', read_only=True)
+    liked_by_user = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Post
+        fields = ['id', 'author', 'content', 'created_at', 'likes_count', 'liked_by_user']
+
+    def get_liked_by_user(self, obj):
+        request = self.context.get('request')
+        if not request or request.user.is_anonymous:
+            return False
+        return obj.likes.filter(user=request.user).exists()
